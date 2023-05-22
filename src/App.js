@@ -1,4 +1,4 @@
-import NewCustomerForm from './components/NewCustomerForm';
+// import NewCustomerForm from './components/NewCustomerForm';
 import OrderSheet from './components/OrderSheet';
 import './App.css';
 
