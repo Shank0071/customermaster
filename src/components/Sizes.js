@@ -1,7 +1,9 @@
+import "./Sizes.css"
+
 
 export default function Sizes({ size, name, value, handleChange }) {
   return (
-    <div>
+    <div className="nums">
         <label htmlFor="quantity">{ size }</label>
         <input
             type="number"
