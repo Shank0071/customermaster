@@ -143,12 +143,12 @@ const OrderSheet = () => {
 
   const handlePrint = () => {
     window.print();
-    setCustomerName("");
-    setProduct("");
+    // setCustomerName("");
+    // setProduct("");
     setQuantity("");
-    setOrderDate("");
-    setTouch("");
-    setSeal("");
+    // setOrderDate("");
+    // setTouch("");
+    // setSeal("");
   };
 
   const handleProductForm = (e) => {
