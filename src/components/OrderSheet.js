@@ -47,15 +47,6 @@ const OrderSheet = () => {
     snapshotListenOptions: { includeMetadataChanges: true },
   });
 
-  const [value1, loading1, error1] = useCollection(
-    collection(db, "customers"),
-    {
-      snapshotListenOptions: { includeMetadataChanges: true },
-    }
-  );
-
-  console.log(value1);
-
   useEffect(() => {
     if (loading) {
       console.log("loading...");
@@ -75,11 +66,10 @@ const OrderSheet = () => {
         return results;
       });
       setProducts1(results);
-      console.log(products);
-      console.log(products1);
+
       // console.log(results)
     }
-  }, [loading, value]);
+  }, [loading, value, error]);
 
   const [orders, setOrders] = useState([]);
   const [customerName, setCustomerName] = useState("");
@@ -153,12 +143,12 @@ const OrderSheet = () => {
 
   const handlePrint = () => {
     window.print();
-    // setCustomerName("");
-    // setProduct("");
-    // setQuantity("");
-    // setOrderDate("");
-    // setTouch("");
-    // setSeal("");
+    setCustomerName("");
+    setProduct("");
+    setQuantity("");
+    setOrderDate("");
+    setTouch("");
+    setSeal("");
   };
 
   const handleProductForm = (e) => {
@@ -175,7 +165,7 @@ const OrderSheet = () => {
   };
 
   const handleClickProduct = () => {
-    setProductFormView(prev => !prev)
+    setProductFormView((prev) => !prev);
   };
 
   const isColumnZero = (columnName) => {
