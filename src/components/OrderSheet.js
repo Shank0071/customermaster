@@ -1,33 +1,18 @@
-import React, { useState, useReducer } from "react";
+import React, { useState, useReducer, useRef, useEffect } from "react";
 import Sizes from "./Sizes";
+import Table from "./Table";
+import OrderTable from "./OrderTable";
+import AddProductForm from "./forms/AddProductForm";
+import { collection, addDoc } from "firebase/firestore";
+import { useCollection } from "react-firebase-hooks/firestore";
+import { db } from "../firebase/firebase";
+import {
+  products,
+  initialState,
+  initial,
+  totalCalculator,
+} from "../constants/constants";
 import "./OrderSheet.css";
-
-const products = {
-  skPlainMugappu: 70,
-  skKeelArumbuMugappu: 80,
-  sk2SideArumbuMugappu: 90,
-  skOttuMuthuMugappu: 85,
-  skLineSalangai: 150,
-};
-
-const initial = {
-  4: 0,
-  4.5: 0,
-  5: 0,
-  5.5: 0,
-  6: 0,
-  6.5: 0,
-  7: 0,
-  7.5: 0,
-  8: 0,
-  8.5: 0,
-  9: 0,
-  9.5: 0,
-  10: 0,
-  10.5: 0,
-  11: 0,
-  11.5: 0,
-};
 
 const reducer = (state, action) => {
   switch (action.type) {
@@ -40,7 +25,62 @@ const reducer = (state, action) => {
   }
 };
 
+const addDocument = async (newDocumentData, collectionName) => {
+  try {
+    const collectionRef = collection(db, collectionName);
+
+    await addDoc(collectionRef, newDocumentData);
+
+    alert("Document added successfully!");
+  } catch (error) {
+    console.error("Error adding document: ", error);
+  }
+};
+
 const OrderSheet = () => {
+  const pdctRef = useRef("");
+  const wtRef = useRef(0);
+  const pdctTamilRef = useRef("");
+  const [products1, setProducts1] = useState([]);
+
+  const [value, loading, error] = useCollection(collection(db, "products"), {
+    snapshotListenOptions: { includeMetadataChanges: true },
+  });
+
+  const [value1, loading1, error1] = useCollection(
+    collection(db, "customers"),
+    {
+      snapshotListenOptions: { includeMetadataChanges: true },
+    }
+  );
+
+  console.log(value1);
+
+  useEffect(() => {
+    if (loading) {
+      console.log("loading...");
+    } else if (error) {
+      console.log("error");
+    } else if (value) {
+      console.log(value);
+      let results = [];
+      value.docs.map((doc) => {
+        console.log(doc.data().name);
+        products[doc.data().name] = [doc.data().weight, doc.data().tamilName];
+        results.push({
+          name: doc.data().name,
+          tamilName: doc.data().tamilName,
+          weight: doc.data().weight,
+        });
+        return results;
+      });
+      setProducts1(results);
+      console.log(products);
+      console.log(products1);
+      // console.log(results)
+    }
+  }, [loading, value]);
+
   const [orders, setOrders] = useState([]);
   const [customerName, setCustomerName] = useState("");
   const [product, setProduct] = useState("");
@@ -51,25 +91,7 @@ const OrderSheet = () => {
   const [totWeights, setTotWeights] = useState([]);
   const [viewTable, setViewTable] = useState(false);
   const [pieces, setPieces] = useState([]);
-
-  const initialState = {
-    4: 0,
-    4.5: 0,
-    5: 0,
-    5.5: 0,
-    6: 0,
-    6.5: 0,
-    7: 0,
-    7.5: 0,
-    8: 0,
-    8.5: 0,
-    9: 0,
-    9.5: 0,
-    10: 0,
-    10.5: 0,
-    11: 0,
-    11.5: 0,
-  };
+  const [productFormView, setProductFormView] = useState(false);
 
   const [state, dispatch] = useReducer(reducer, initialState);
 
@@ -111,57 +133,69 @@ const OrderSheet = () => {
     let pics = 0;
 
     for (let i = 4; i < 20; i++) {
-      console.log("indd", index);
       weight +=
-        (products[newOrder["product"]] / 10) * (+newOrder[index] * index);
+        (products[newOrder["product"]][0] / 10) * (+newOrder[index] * index);
       pics += +newOrder[index];
       index += 0.5;
     }
 
-    newOrder.weight = weight;
+    newOrder.weight = Number(weight).toFixed(2);
     newOrder.pieces = pics;
     setPieces([...pieces, pics]);
     console.log(pieces);
     setTotWeights([...totWeights, weight]);
     console.log(totWeights);
     setOrders([...orders, newOrder]);
-    // Reset form fields
-    // setCustomerName('');
     setProduct("");
-    // setQuantity('');
-    // setOrderDate('');
-    // setTouch("");
-    // setSeal("");
     dispatch({ type: "RESET", payload: initialState });
+    console.log("orders ", orders);
   };
 
   const handlePrint = () => {
     window.print();
-    setCustomerName("");
-    setProduct("");
-    setQuantity("");
-    setOrderDate("");
-    setTouch("");
-    setSeal("");
+    // setCustomerName("");
+    // setProduct("");
+    // setQuantity("");
+    // setOrderDate("");
+    // setTouch("");
+    // setSeal("");
   };
 
-  const totalCalculator = (arr) => {
-    let sum = 0;
-    arr.map((p) => {
-      return (sum += p);
-    });
-    return sum;
+  const handleProductForm = (e) => {
+    e.preventDefault();
+    addDocument(
+      {
+        name: pdctRef.current.value,
+        tamilName: pdctTamilRef.current.value,
+        weight: +wtRef.current.value,
+      },
+      "products"
+    );
+    setProductFormView((prev) => !prev);
+  };
+
+  const handleClickProduct = () => {
+    setProductFormView(prev => !prev)
   };
 
   const isColumnZero = (columnName) => {
     return orders.every((row) => row[columnName] === 0);
   };
 
-  console.log(isColumnZero("4"));
-
   return (
     <div>
-      {!viewTable && (
+      {productFormView && (
+        <AddProductForm
+          handleProductForm={handleProductForm}
+          pdctRef={pdctRef}
+          pdctTamilRef={pdctTamilRef}
+          wtRef={wtRef}
+          addDocument={addDocument}
+          handleClickProduct={handleClickProduct}
+        />
+      )}
+
+      {!viewTable && value && (
         <div>
           <h1>Order Sheet</h1>
           <form onSubmit={handleSubmit}>
@@ -197,41 +231,52 @@ const OrderSheet = () => {
                     required
                   >
                     <option value="">Select a product</option>
-                    <option value="skPlainMugappu">SK Plain Mugappu</option>
-                    <option value="skKeelArumbuMugappu">
-                      SK Keel Arumbu Mugappu
-                    </option>
-                    <option value="sk2SideArumbuMugappu">
-                      SK 2-side Arumbu Mugappu
-                    </option>
-                    <option value="skOttuMuthuMugappu">
-                      SK Ottu Muthu Mugappu
-                    </option>
-                    <option value="skLineSalangai">SK Line Salangai</option>
+                    {products1.map((p) => (
+                      <option key={p.name} value={`${p.name}`}>
+                        {p.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
 
-              <div>
+              <div className="topview_right">
                 <div>
-                  <label htmlFor="seal">Seal:</label>
-                  <input
-                    type="text"
-                    id="seal"
-                    value={seal}
-                    onChange={(e) => setSeal(e.target.value)}
-                    required
-                  />
+                  <div>
+                    <label htmlFor="seal">Seal:</label>
+                    <input
+                      type="text"
+                      id="seal"
+                      value={seal}
+                      onChange={(e) => setSeal(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="touch">Touch:</label>
+                    <input
+                      type="text"
+                      id="touch"
+                      value={touch}
+                      onChange={(e) => setTouch(e.target.value)}
+                      required
+                    />
+                  </div>
                 </div>
+
                 <div>
-                  <label htmlFor="touch">Touch:</label>
-                  <input
-                    type="text"
-                    id="touch"
-                    value={touch}
-                    onChange={(e) => setTouch(e.target.value)}
-                    required
-                  />
+                  <button
+                    onClick={() => setProductFormView((prev) => !prev)}
+                    className="btn topview_btn"
+                  >
+                    Add Product
+                  </button>
+                  {/* <button
+                    onClick={() => setProductFormView((prev) => !prev)}
+                    className="btn topview_btn"
+                  >
+                    Add Customer
+                  </button> */}
                 </div>
               </div>
             </div>
@@ -250,49 +295,17 @@ const OrderSheet = () => {
                 />
               ))}
             </div>
-
             <button type="submit">Place Order</button>
           </form>
 
-          <table>
-            <thead>
-              <tr>
-                <th>Product</th>
-                <th>Weight</th>
-                {[
-                  4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10, 10.5, 11,
-                  11.5,
-                ].map((s) => (
-                  <th key={s}>{s}</th>
-                ))}
-                <th>Total Wt.</th>
-                <th>Total Pcs.</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders.map((order) => (
-                <tr key={order.id}>
-                  <td>{order.product}</td>
-                  <td>{products[`${order.product}`]}</td>
-                  {[
-                    4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10, 10.5,
-                    11, 11.5,
-                  ].map((s) => (
-                    <td key={s}>{order[s]}</td>
-                  ))}
-                  <td>{order.weight}</td>
-                  <td>{order.pieces}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <Table orders={orders} products={products} />
           <button className="btn" onClick={() => setViewTable((prev) => !prev)}>
             View Table
           </button>
         </div>
       )}
 
-      {viewTable && (
+      {viewTable && value && (
         <div>
           <h1>Customer Name: {customerName}</h1>
           <div className="order_summary">
@@ -300,38 +313,13 @@ const OrderSheet = () => {
             <h3>Touch: {touch}</h3>
             <h3>Order Date: {orderDate}</h3>
           </div>
-          <table>
-            <thead>
-              <tr>
-                <th>Product</th>
-                <th>Weight</th>
-                {[
-                  4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10, 10.5, 11,
-                  11.5,
-                ].map((s) => !isColumnZero("" + s) && <th key={s}>{s}</th>)}
-                <th>Total Wt.</th>
-                <th>Total Pcs.</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders.map((order) => (
-                <tr key={order.id}>
-                  <td>{order.product}</td>
-                  <td>{products[`${order.product}`]}</td>
-                  {[
-                    4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10, 10.5,
-                    11, 11.5,
-                  ].map(
-                    (s) => !isColumnZero("" + s) && <td key={s}>{order[s]}</td>
-                  )}
-                  <td>{order.weight}</td>
-                  <td>{order.pieces}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <OrderTable
+            orders={orders}
+            isColumnZero={isColumnZero}
+            products={products}
+          />
           <div className="weightPieceInfo">
-            <h3>Weight: {totalCalculator(totWeights)}</h3>
+            <h3>Weight: {totalCalculator(totWeights).toFixed(2)}</h3>
             <h3>Pieces: {totalCalculator(pieces)}</h3>
           </div>
           <button className="btn" onClick={() => setViewTable((prev) => !prev)}>

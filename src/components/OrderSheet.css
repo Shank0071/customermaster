@@ -116,3 +116,15 @@ input[type="number"] {
   text-align: right;
   margin: 60px;
 }
+
+
+.topview_right {
+  display: flex;
+  gap: 3rem;
+}
+
+.topview_btn {
+  margin-top: 50px;
+  margin-left: 50px;
+}
+

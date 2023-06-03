@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { db } from "../firebase/firebase";
+import { db } from "../../firebase/firebase";
 import { collection, addDoc } from 'firebase/firestore';
 import "./NewCustomerForm.css";
 
@@ -7,7 +7,7 @@ import "./NewCustomerForm.css";
 
 export default function NewCustomerForm() {
     const [name, setName] = useState("");
-    const [gst, setGst] = useState("");
+    const [gst, setGst] = useState("");  
     const [address1, setAddress1] = useState("");
     const [address2, setAddress2] = useState("");
     const [cell1, setCell1] = useState("");
