@@ -3,6 +3,7 @@ import Sizes from "./Sizes";
 import Table from "./Table";
 import OrderTable from "./OrderTable";
 import AddProductForm from "./forms/AddProductForm";
+import UpdateDocumentById from "./forms/UpdateDocumentById";
 import { collection, addDoc } from "firebase/firestore";
 import { useCollection } from "react-firebase-hooks/firestore";
 import { db } from "../firebase/firebase";
@@ -37,6 +38,7 @@ const addDocument = async (newDocumentData, collectionName) => {
   }
 };
 
+
 const OrderSheet = () => {
   const pdctRef = useRef("");
   const wtRef = useRef(0);
@@ -57,8 +59,9 @@ const OrderSheet = () => {
       let results = [];
       value.docs.map((doc) => {
         console.log(doc.data().name);
-        products[doc.data().name] = [doc.data().weight, doc.data().tamilName];
+        products[doc.data().name] = [doc.data().weight, doc.data().tamilName, doc.id];
         results.push({
+          id: doc.id,
           name: doc.data().name,
           tamilName: doc.data().tamilName,
           weight: doc.data().weight,
@@ -66,10 +69,10 @@ const OrderSheet = () => {
         return results;
       });
       setProducts1(results);
-
-      // console.log(results)
     }
   }, [loading, value, error]);
+
+  console.log("prodssssssssss", products1)
 
   const [orders, setOrders] = useState([]);
   const [customerName, setCustomerName] = useState("");
@@ -82,6 +85,7 @@ const OrderSheet = () => {
   const [viewTable, setViewTable] = useState(false);
   const [pieces, setPieces] = useState([]);
   const [productFormView, setProductFormView] = useState(false);
+  const [editProductFormView, setEditProductFormView] = useState(false);
 
   const [state, dispatch] = useReducer(reducer, initialState);
 
@@ -168,9 +172,14 @@ const OrderSheet = () => {
     setProductFormView((prev) => !prev);
   };
 
+  const handleClickEditProduct = () => {
+    setEditProductFormView((prev) => !prev);
+  }
+
   const isColumnZero = (columnName) => {
     return orders.every((row) => row[columnName] === 0);
   };
+
 
   return (
     <div>
@@ -183,6 +192,10 @@ const OrderSheet = () => {
           addDocument={addDocument}
           handleClickProduct={handleClickProduct}
         />
+      )}
+
+      {editProductFormView && (
+        <UpdateDocumentById handleClickEditProduct={handleClickEditProduct} products={products1} />
       )}
 
       {!viewTable && value && (
@@ -261,12 +274,7 @@ const OrderSheet = () => {
                   >
                     Add Product
                   </button>
-                  {/* <button
-                    onClick={() => setProductFormView((prev) => !prev)}
-                    className="btn topview_btn"
-                  >
-                    Add Customer
-                  </button> */}
+                  <button className="btn topview_btn" onClick={handleClickEditProduct}>Edit Product</button>
                 </div>
               </div>
             </div>
